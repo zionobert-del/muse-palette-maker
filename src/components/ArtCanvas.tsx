@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect } from "fabric";
+import { Canvas as FabricCanvas, Circle, Rect, Line, IText } from "fabric";
 import { Button } from "@/components/ui/button";
-import { Palette, Square, Circle as CircleIcon, Brush, Eraser } from "lucide-react";
+import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface ArtCanvasProps {
   activeColor: string;
-  activeTool: "select" | "draw" | "rectangle" | "circle";
-  onToolChange: (tool: "select" | "draw" | "rectangle" | "circle") => void;
+  activeTool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser";
+  brushSize: number;
+  onToolChange: (tool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser") => void;
+  onBrushSizeChange: (size: number) => void;
 }
 
-export const ArtCanvas = ({ activeColor, activeTool, onToolChange }: ArtCanvasProps) => {
+export const ArtCanvas = ({ activeColor, activeTool, brushSize, onToolChange, onBrushSizeChange }: ArtCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [isDrawingLine, setIsDrawingLine] = useState(false);
+  const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -25,8 +30,49 @@ export const ArtCanvas = ({ activeColor, activeTool, onToolChange }: ArtCanvasPr
     // Initialize the freeDrawingBrush right after canvas creation
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = activeColor;
-      canvas.freeDrawingBrush.width = 3;
+      canvas.freeDrawingBrush.width = brushSize;
     }
+
+    // Set up line drawing listeners
+    canvas.on('mouse:down', (options) => {
+      if (activeTool === 'line' && options.e) {
+        setIsDrawingLine(true);
+        const pointer = canvas.getPointer(options.e);
+        setLineStartPoint({ x: pointer.x, y: pointer.y });
+      }
+    });
+
+    canvas.on('mouse:up', (options) => {
+      if (activeTool === 'line' && isDrawingLine && lineStartPoint && options.e) {
+        const pointer = canvas.getPointer(options.e);
+        const line = new Line([lineStartPoint.x, lineStartPoint.y, pointer.x, pointer.y], {
+          stroke: activeColor,
+          strokeWidth: brushSize,
+          selectable: true,
+        });
+        canvas.add(line);
+        setIsDrawingLine(false);
+        setLineStartPoint(null);
+      }
+    });
+
+    // Set up text tool double-click
+    canvas.on('mouse:dblclick', (options) => {
+      if (activeTool === 'text' && options.e) {
+        const pointer = canvas.getPointer(options.e);
+        const text = new IText('Click to edit', {
+          left: pointer.x,
+          top: pointer.y,
+          fill: activeColor,
+          fontSize: Math.max(brushSize * 3, 16),
+          selectable: true,
+          editable: true,
+        });
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        text.enterEditing();
+      }
+    });
 
     setFabricCanvas(canvas);
 
@@ -38,13 +84,13 @@ export const ArtCanvas = ({ activeColor, activeTool, onToolChange }: ArtCanvasPr
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.isDrawingMode = activeTool === "draw";
+    fabricCanvas.isDrawingMode = activeTool === "draw" || activeTool === "eraser";
     
-    if (activeTool === "draw" && fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.color = activeColor;
-      fabricCanvas.freeDrawingBrush.width = 3;
+    if ((activeTool === "draw" || activeTool === "eraser") && fabricCanvas.freeDrawingBrush) {
+      fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : activeColor;
+      fabricCanvas.freeDrawingBrush.width = brushSize;
     }
-  }, [activeTool, activeColor, fabricCanvas]);
+  }, [activeTool, activeColor, brushSize, fabricCanvas]);
 
   const handleToolClick = (tool: typeof activeTool) => {
     onToolChange(tool);
@@ -71,6 +117,33 @@ export const ArtCanvas = ({ activeColor, activeTool, onToolChange }: ArtCanvasPr
     }
   };
 
+  const handleUndo = () => {
+    if (!fabricCanvas) return;
+    const objects = fabricCanvas.getObjects();
+    if (objects.length > 0) {
+      fabricCanvas.remove(objects[objects.length - 1]);
+      fabricCanvas.renderAll();
+    }
+  };
+
+  const handleRedo = () => {
+    // Note: A full undo/redo system would require maintaining a history stack
+    // This is a simplified version for demonstration
+    console.log("Redo functionality would be implemented with a proper history system");
+  };
+
+  const handleZoomIn = () => {
+    if (!fabricCanvas) return;
+    const zoom = fabricCanvas.getZoom();
+    fabricCanvas.setZoom(Math.min(zoom * 1.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    if (!fabricCanvas) return;
+    const zoom = fabricCanvas.getZoom();
+    fabricCanvas.setZoom(Math.max(zoom / 1.2, 0.3));
+  };
+
   const handleClear = () => {
     if (!fabricCanvas) return;
     fabricCanvas.clear();
@@ -80,55 +153,164 @@ export const ArtCanvas = ({ activeColor, activeTool, onToolChange }: ArtCanvasPr
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 p-4 bg-card rounded-lg border shadow-lg">
-        <Button
-          variant={activeTool === "select" ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleToolClick("select")}
-          className="transition-all duration-200"
-        >
-          <Palette className="w-4 h-4" />
-        </Button>
-        
-        <Button
-          variant={activeTool === "draw" ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleToolClick("draw")}
-          className="transition-all duration-200"
-        >
-          <Brush className="w-4 h-4" />
-        </Button>
-        
-        <Button
-          variant={activeTool === "rectangle" ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleToolClick("rectangle")}
-          className="transition-all duration-200"
-        >
-          <Square className="w-4 h-4" />
-        </Button>
-        
-        <Button
-          variant={activeTool === "circle" ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleToolClick("circle")}
-          className="transition-all duration-200"
-        >
-          <CircleIcon className="w-4 h-4" />
-        </Button>
+      {/* Main Toolbar */}
+      <div className="flex items-center gap-3 p-4 bg-card rounded-lg border shadow-lg flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeTool === "select" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("select")}
+            className="transition-all duration-200"
+          >
+            <Palette className="w-4 h-4" />
+          </Button>
+          
+          <Button
+            variant={activeTool === "draw" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("draw")}
+            className="transition-all duration-200"
+          >
+            <Brush className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant={activeTool === "eraser" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("eraser")}
+            className="transition-all duration-200"
+          >
+            <Eraser className="w-4 h-4" />
+          </Button>
+          
+          <Button
+            variant={activeTool === "rectangle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("rectangle")}
+            className="transition-all duration-200"
+          >
+            <Square className="w-4 h-4" />
+          </Button>
+          
+          <Button
+            variant={activeTool === "circle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("circle")}
+            className="transition-all duration-200"
+          >
+            <CircleIcon className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant={activeTool === "line" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("line")}
+            className="transition-all duration-200"
+          >
+            <Minus className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant={activeTool === "text" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("text")}
+            className="transition-all duration-200"
+          >
+            <Type className="w-4 h-4" />
+          </Button>
+        </div>
 
         <div className="w-px h-6 bg-border mx-2" />
-        
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={handleClear}
-          className="transition-all duration-200"
-        >
-          <Eraser className="w-4 h-4" />
-        </Button>
+
+        {/* Brush Size Control */}
+        <div className="flex items-center gap-3 min-w-32">
+          <span className="text-sm text-muted-foreground">Size:</span>
+          <Slider
+            value={[brushSize]}
+            onValueChange={(value) => onBrushSizeChange(value[0])}
+            max={50}
+            min={1}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-sm font-mono w-6 text-center">{brushSize}</span>
+        </div>
+
+        <div className="w-px h-6 bg-border mx-2" />
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUndo}
+            className="transition-all duration-200"
+          >
+            <Undo className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRedo}
+            className="transition-all duration-200"
+          >
+            <Redo className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomIn}
+            className="transition-all duration-200"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomOut}
+            className="transition-all duration-200"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleClear}
+            className="transition-all duration-200"
+          >
+            Clear All
+          </Button>
+        </div>
       </div>
+
+      {/* Tool Instructions */}
+      {activeTool === "line" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Line Tool:</strong> Click and drag to draw straight lines
+          </p>
+        </div>
+      )}
+
+      {activeTool === "text" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Text Tool:</strong> Double-click anywhere on the canvas to add text
+          </p>
+        </div>
+      )}
+
+      {activeTool === "eraser" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Eraser Tool:</strong> Draw to erase parts of your artwork
+          </p>
+        </div>
+      )}
 
       {/* Canvas */}
       <div className="relative overflow-hidden rounded-xl border-2 border-border shadow-creative bg-white">
