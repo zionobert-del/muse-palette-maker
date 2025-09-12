@@ -308,17 +308,33 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
         <div className="w-px h-6 bg-border mx-2" />
 
         {/* Brush Size Control */}
-        <div className="flex items-center gap-3 min-w-32">
+        <div className="flex items-center gap-3 min-w-48">
           <span className="text-sm text-muted-foreground">Size:</span>
+          
+          {/* Preset Size Buttons */}
+          <div className="flex gap-1">
+            {[1, 3, 5, 10, 20, 30].map((size) => (
+              <Button
+                key={size}
+                variant={brushSize === size ? "default" : "outline"}
+                size="sm"
+                onClick={() => onBrushSizeChange(size)}
+                className="w-8 h-8 p-0 text-xs transition-all duration-200"
+              >
+                {size}
+              </Button>
+            ))}
+          </div>
+          
           <Slider
             value={[brushSize]}
             onValueChange={(value) => onBrushSizeChange(value[0])}
-            max={50}
+            max={100}
             min={1}
             step={1}
-            className="flex-1"
+            className="flex-1 min-w-20"
           />
-          <span className="text-sm font-mono w-6 text-center">{brushSize}</span>
+          <span className="text-sm font-mono w-8 text-center">{brushSize}</span>
         </div>
 
         <div className="w-px h-6 bg-border mx-2" />
