@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; # dirffrnt brush strokes
 import { Canvas as FabricCanvas, Circle, Rect, Line, IText } from "fabric";
-import { Button } from "@/components/ui/button";
-import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button"; # mad it accessable for all devices
+import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal } from "lucide-react"; # add more features to draw on
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
