@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Circle, Rect, Line, IText } from "fabric";
 import { Button } from "@/components/ui/button";
-import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal } from "lucide-react";
+import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal, MousePointer, Trash2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -80,9 +80,24 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Make canvas responsive
+    const updateCanvasSize = () => {
+      const container = canvasRef.current?.parentElement;
+      if (!container) return;
+      
+      const containerWidth = container.clientWidth;
+      const maxWidth = Math.min(containerWidth - 32, 800); // 16px padding on each side
+      const aspectRatio = 600 / 800;
+      const height = maxWidth * aspectRatio;
+      
+      return { width: maxWidth, height };
+    };
+
+    const { width, height } = updateCanvasSize() || { width: 800, height: 600 };
+
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: 800,
-      height: 600,
+      width,
+      height,
       backgroundColor: "#ffffff",
     });
 
@@ -138,7 +153,17 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
 
     setFabricCanvas(canvas);
 
+    // Handle window resize
+    const handleResize = () => {
+      const { width, height } = updateCanvasSize() || { width: canvas.width, height: canvas.height };
+      canvas.setDimensions({ width, height });
+      applyPattern(canvas, activePattern);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       canvas.dispose();
     };
   }, []);
@@ -219,172 +244,206 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Main Toolbar */}
-      <div className="flex items-center gap-3 p-4 bg-card rounded-lg border shadow-lg flex-wrap">
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-4 w-full">
+      {/* Mobile-First Responsive Toolbar */}
+      <div className="flex flex-col gap-4 p-3 sm:p-4 bg-card border rounded-lg shadow-sm">
+        
+        {/* Primary Tools Row - Always Visible */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Button
             variant={activeTool === "select" ? "default" : "outline"}
             size="sm"
             onClick={() => handleToolClick("select")}
-            className="transition-all duration-200"
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
           >
-            <Palette className="w-4 h-4" />
+            <MousePointer className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Select</span>
           </Button>
-          
           <Button
             variant={activeTool === "draw" ? "default" : "outline"}
             size="sm"
             onClick={() => handleToolClick("draw")}
-            className="transition-all duration-200"
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
           >
             <Brush className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Draw</span>
           </Button>
-
           <Button
             variant={activeTool === "eraser" ? "default" : "outline"}
             size="sm"
             onClick={() => handleToolClick("eraser")}
-            className="transition-all duration-200"
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
           >
             <Eraser className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Erase</span>
           </Button>
           
-          <Button
-            variant={activeTool === "rectangle" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleToolClick("rectangle")}
-            className="transition-all duration-200"
-          >
-            <Square className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            variant={activeTool === "circle" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleToolClick("circle")}
-            className="transition-all duration-200"
-          >
-            <CircleIcon className="w-4 h-4" />
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUndo}
+              className="transition-all duration-200 touch-manipulation w-10 h-10 p-0"
+            >
+              <Undo className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRedo}
+              className="transition-all duration-200 touch-manipulation w-10 h-10 p-0"
+            >
+              <Redo className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClear}
+              className="transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground touch-manipulation w-10 h-10 p-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
 
+        {/* Secondary Tools Row */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Button
             variant={activeTool === "line" ? "default" : "outline"}
             size="sm"
             onClick={() => handleToolClick("line")}
-            className="transition-all duration-200"
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
           >
             <Minus className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Line</span>
           </Button>
-
+          <Button
+            variant={activeTool === "rectangle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("rectangle")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <Square className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Box</span>
+          </Button>
+          <Button
+            variant={activeTool === "circle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("circle")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <CircleIcon className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Circle</span>
+          </Button>
           <Button
             variant={activeTool === "text" ? "default" : "outline"}
             size="sm"
             onClick={() => handleToolClick("text")}
-            className="transition-all duration-200"
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
           >
             <Type className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Text</span>
           </Button>
-        </div>
 
-        <div className="w-px h-6 bg-border mx-2" />
-
-        {/* Pattern Control */}
-        <div className="flex items-center gap-3 min-w-32">
-          <span className="text-sm text-muted-foreground">Pattern:</span>
-          <Select value={activePattern} onValueChange={onPatternChange}>
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="grid">Grid</SelectItem>
-              <SelectItem value="dots">Dots</SelectItem>
-              <SelectItem value="lines">Lines</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="w-px h-6 bg-border mx-2" />
-
-        {/* Brush Size Control */}
-        <div className="flex items-center gap-3 min-w-48">
-          <span className="text-sm text-muted-foreground">Size:</span>
-          
-          {/* Preset Size Buttons */}
-          <div className="flex gap-1">
-            {[1, 3, 5, 10, 20, 30].map((size) => (
-              <Button
-                key={size}
-                variant={brushSize === size ? "default" : "outline"}
-                size="sm"
-                onClick={() => onBrushSizeChange(size)}
-                className="w-8 h-8 p-0 text-xs transition-all duration-200"
-              >
-                {size}
-              </Button>
-            ))}
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomOut}
+              className="w-10 h-10 p-0 touch-manipulation"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomIn}
+              className="w-10 h-10 p-0 touch-manipulation"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
           </div>
-          
-          <Slider
-            value={[brushSize]}
-            onValueChange={(value) => onBrushSizeChange(value[0])}
-            max={100}
-            min={1}
-            step={1}
-            className="flex-1 min-w-20"
-          />
-          <span className="text-sm font-mono w-8 text-center">{brushSize}</span>
         </div>
 
-        <div className="w-px h-6 bg-border mx-2" />
+        {/* Settings Row */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+          
+          {/* Brush Size - Mobile Optimized */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm text-muted-foreground">Size:</span>
+            
+            {/* Mobile: Preset buttons in grid */}
+            <div className="flex sm:hidden flex-wrap gap-1 justify-center max-w-xs">
+              {[1, 3, 5, 10, 20, 30].map((size) => (
+                <Button
+                  key={size}
+                  variant={brushSize === size ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onBrushSizeChange(size)}
+                  className="w-10 h-10 p-0 text-xs transition-all duration-200 touch-manipulation"
+                >
+                  {size}
+                </Button>
+              ))}
+            </div>
+            
+            {/* Desktop: Horizontal layout */}
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="flex gap-1">
+                {[1, 5, 10, 20].map((size) => (
+                  <Button
+                    key={size}
+                    variant={brushSize === size ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => onBrushSizeChange(size)}
+                    className="w-8 h-8 p-0 text-xs transition-all duration-200"
+                  >
+                    {size}
+                  </Button>
+                ))}
+              </div>
+              <Slider
+                value={[brushSize]}
+                onValueChange={(value) => onBrushSizeChange(value[0])}
+                max={100}
+                min={1}
+                step={1}
+                className="w-20"
+              />
+              <span className="text-sm font-mono w-8 text-center">{brushSize}</span>
+            </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUndo}
-            className="transition-all duration-200"
-          >
-            <Undo className="w-4 h-4" />
-          </Button>
+            {/* Mobile: Slider */}
+            <div className="flex sm:hidden items-center gap-2 w-full max-w-xs">
+              <Slider
+                value={[brushSize]}
+                onValueChange={(value) => onBrushSizeChange(value[0])}
+                max={100}
+                min={1}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-sm font-mono w-8 text-center">{brushSize}</span>
+            </div>
+          </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRedo}
-            className="transition-all duration-200"
-          >
-            <Redo className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomIn}
-            className="transition-all duration-200"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-            className="transition-all duration-200"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleClear}
-            className="transition-all duration-200"
-          >
-            Clear All
-          </Button>
+          {/* Background Pattern */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Pattern:</span>
+            <Select value={activePattern} onValueChange={onPatternChange}>
+              <SelectTrigger className="w-20 sm:w-24 touch-manipulation">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="grid">Grid</SelectItem>
+                <SelectItem value="dots">Dots</SelectItem>
+                <SelectItem value="lines">Lines</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -414,11 +473,15 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
       )}
 
       {/* Canvas */}
-      <div className="relative overflow-hidden rounded-xl border-2 border-border shadow-creative bg-white">
+      <div className="relative overflow-hidden rounded-xl border-2 border-border shadow-creative bg-white mx-auto w-full">
         <canvas 
           ref={canvasRef} 
-          className="max-w-full block"
-          style={{ filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.1))' }}
+          className="w-full h-auto block touch-manipulation"
+          style={{ 
+            filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.1))',
+            maxWidth: '100%',
+            height: 'auto'
+          }}
         />
       </div>
     </div>
