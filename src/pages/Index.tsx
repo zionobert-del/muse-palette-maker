@@ -9,6 +9,7 @@ const Index = () => {
   const [activeColor, setActiveColor] = useState("#000000");
   const [activeTool, setActiveTool] = useState<"select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser">("draw");
   const [brushSize, setBrushSize] = useState(5);
+  const [activePattern, setActivePattern] = useState<"none" | "grid" | "dots" | "lines">("none");
 
   const handleSave = () => {
     toast("Artwork saved to gallery!", {
@@ -80,6 +81,21 @@ const Index = () => {
             </div>
 
             <div className="bg-card p-6 rounded-xl border shadow-creative">
+              <h3 className="font-semibold mb-4 text-card-foreground">Background Pattern</h3>
+              <div className="text-center">
+                <div className="text-lg font-semibold capitalize text-primary mb-2">
+                  {activePattern === "none" ? "Plain Canvas" : activePattern}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {activePattern === "grid" && "Perfect for technical drawings"}
+                  {activePattern === "dots" && "Great for sketching guides"}
+                  {activePattern === "lines" && "Ideal for writing or lined art"}
+                  {activePattern === "none" && "Clean blank canvas"}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-card p-6 rounded-xl border shadow-creative">
               <h3 className="font-semibold mb-4 text-card-foreground">Actions</h3>
               <div className="space-y-3">
                 <Button 
@@ -107,8 +123,10 @@ const Index = () => {
               activeColor={activeColor}
               activeTool={activeTool}
               brushSize={brushSize}
+              activePattern={activePattern}
               onToolChange={setActiveTool}
               onBrushSizeChange={setBrushSize}
+              onPatternChange={setActivePattern}
             />
           </div>
         </div>

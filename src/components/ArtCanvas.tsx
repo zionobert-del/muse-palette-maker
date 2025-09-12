@@ -1,22 +1,81 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Circle, Rect, Line, IText } from "fabric";
 import { Button } from "@/components/ui/button";
-import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut } from "lucide-react";
+import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ArtCanvasProps {
   activeColor: string;
   activeTool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser";
   brushSize: number;
+  activePattern: "none" | "grid" | "dots" | "lines";
   onToolChange: (tool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser") => void;
   onBrushSizeChange: (size: number) => void;
+  onPatternChange: (pattern: "none" | "grid" | "dots" | "lines") => void;
 }
 
-export const ArtCanvas = ({ activeColor, activeTool, brushSize, onToolChange, onBrushSizeChange }: ArtCanvasProps) => {
+export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, onToolChange, onBrushSizeChange, onPatternChange }: ArtCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [isDrawingLine, setIsDrawingLine] = useState(false);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
+
+  const applyPattern = (canvas: FabricCanvas, pattern: string) => {
+    const ctx = canvas.getContext();
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    
+    // Clear any existing pattern
+    canvas.backgroundColor = "#ffffff";
+    
+    if (pattern === "grid") {
+      const gridSize = 20;
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.lineWidth = 0.5;
+      
+      // Vertical lines
+      for (let x = 0; x <= width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      
+      // Horizontal lines
+      for (let y = 0; y <= height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    } else if (pattern === "dots") {
+      const dotSpacing = 20;
+      ctx.fillStyle = "#d1d5db";
+      
+      for (let x = dotSpacing; x < width; x += dotSpacing) {
+        for (let y = dotSpacing; y < height; y += dotSpacing) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    } else if (pattern === "lines") {
+      const lineSpacing = 25;
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.lineWidth = 0.5;
+      
+      // Horizontal lines only
+      for (let y = lineSpacing; y < height; y += lineSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    }
+    
+    canvas.renderAll();
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -32,6 +91,9 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, onToolChange, on
       canvas.freeDrawingBrush.color = activeColor;
       canvas.freeDrawingBrush.width = brushSize;
     }
+
+    // Apply initial pattern
+    applyPattern(canvas, activePattern);
 
     // Set up line drawing listeners
     canvas.on('mouse:down', (options) => {
@@ -91,6 +153,11 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, onToolChange, on
       fabricCanvas.freeDrawingBrush.width = brushSize;
     }
   }, [activeTool, activeColor, brushSize, fabricCanvas]);
+
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    applyPattern(fabricCanvas, activePattern);
+  }, [activePattern, fabricCanvas]);
 
   const handleToolClick = (tool: typeof activeTool) => {
     onToolChange(tool);
@@ -218,6 +285,24 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, onToolChange, on
           >
             <Type className="w-4 h-4" />
           </Button>
+        </div>
+
+        <div className="w-px h-6 bg-border mx-2" />
+
+        {/* Pattern Control */}
+        <div className="flex items-center gap-3 min-w-32">
+          <span className="text-sm text-muted-foreground">Pattern:</span>
+          <Select value={activePattern} onValueChange={onPatternChange}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="grid">Grid</SelectItem>
+              <SelectItem value="dots">Dots</SelectItem>
+              <SelectItem value="lines">Lines</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="w-px h-6 bg-border mx-2" />
