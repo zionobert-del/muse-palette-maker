@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ArtCanvas } from "@/components/ArtCanvas";
 import { ColorPicker } from "@/components/ColorPicker";
+import { AIArtGenerator } from "@/components/AIArtGenerator";
 import { Button } from "@/components/ui/button";
-import { Download, Save } from "lucide-react";
+import { Download, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -10,6 +11,8 @@ const Index = () => {
   const [activeTool, setActiveTool] = useState<"select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser">("draw");
   const [brushSize, setBrushSize] = useState(5);
   const [activePattern, setActivePattern] = useState<"none" | "grid" | "dots" | "lines">("none");
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const addImageToCanvasRef = useRef<((imageUrl: string) => Promise<void>) | null>(null);
 
   const handleSave = () => {
     toast("Artwork saved to gallery!", {
@@ -21,6 +24,18 @@ const Index = () => {
     toast("Artwork exported!", {
       description: "Your artwork has been downloaded as an image.",
     });
+  };
+
+  const handleImageGenerated = async (imageUrl: string) => {
+    if (addImageToCanvasRef.current) {
+      await addImageToCanvasRef.current(imageUrl);
+      setShowAIGenerator(false);
+      toast.success("AI artwork added to canvas!");
+    }
+  };
+
+  const handleCanvasImageAdder = (addImageFunction: (imageUrl: string) => Promise<void>) => {
+    addImageToCanvasRef.current = addImageFunction;
   };
 
   return (
@@ -50,6 +65,7 @@ const Index = () => {
               onToolChange={setActiveTool}
               onBrushSizeChange={setBrushSize}
               onPatternChange={setActivePattern}
+              onRegisterImageAdder={handleCanvasImageAdder}
             />
           </div>
 
@@ -95,6 +111,23 @@ const Index = () => {
                 </div>
               </div>
             </div>
+
+            {/* AI Art Generator */}
+            {showAIGenerator ? (
+              <AIArtGenerator onImageGenerated={handleImageGenerated} />
+            ) : (
+              <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
+                <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">AI Art</h3>
+                <Button 
+                  onClick={() => setShowAIGenerator(true)}
+                  className="w-full bg-gradient-primary hover:opacity-90 transition-opacity text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Generate AI Art
+                </Button>
+              </div>
+            )}
 
             {/* Actions - Horizontal on Mobile */}
             <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">

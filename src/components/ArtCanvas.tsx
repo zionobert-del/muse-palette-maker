@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect, Line, IText } from "fabric";
+import { Canvas as FabricCanvas, Circle, Rect, Line, IText, FabricImage } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal, MousePointer, Trash2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -13,9 +13,10 @@ interface ArtCanvasProps {
   onToolChange: (tool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser") => void;
   onBrushSizeChange: (size: number) => void;
   onPatternChange: (pattern: "none" | "grid" | "dots" | "lines") => void;
+  onRegisterImageAdder?: (addImageFunction: (imageUrl: string) => Promise<void>) => void;
 }
 
-export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, onToolChange, onBrushSizeChange, onPatternChange }: ArtCanvasProps) => {
+export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, onToolChange, onBrushSizeChange, onPatternChange, onRegisterImageAdder }: ArtCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [isDrawingLine, setIsDrawingLine] = useState(false);
@@ -242,6 +243,39 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
     fabricCanvas.backgroundColor = "#ffffff";
     fabricCanvas.renderAll();
   };
+
+  const addImageToCanvas = async (imageUrl: string) => {
+    if (!fabricCanvas) return;
+    
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      
+      img.onload = () => {
+        const fabricImg = new FabricImage(img, {
+          left: 50,
+          top: 50,
+          scaleX: Math.min(400 / img.width, 1),
+          scaleY: Math.min(400 / img.height, 1),
+          selectable: true,
+        });
+        
+        fabricCanvas.add(fabricImg);
+        fabricCanvas.renderAll();
+      };
+      
+      img.src = imageUrl;
+    } catch (error) {
+      console.error('Error adding image to canvas:', error);
+    }
+  };
+
+  // Expose the function to parent component
+  useEffect(() => {
+    if (onRegisterImageAdder) {
+      onRegisterImageAdder(addImageToCanvas);
+    }
+  }, [fabricCanvas, onRegisterImageAdder]);
 
   return (
     <div className="flex flex-col gap-4 w-full">
