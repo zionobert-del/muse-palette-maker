@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { ArtCanvas } from "@/components/ArtCanvas";
 import { ColorPicker } from "@/components/ColorPicker";
 import { AIArtGenerator } from "@/components/AIArtGenerator";
+import { AIPromptGenerator } from "@/components/AIPromptGenerator";
 import { Button } from "@/components/ui/button";
 import { Download, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -111,6 +112,9 @@ const Index = () => {
                 </div>
               </div>
             </div>
+
+            {/* AI Prompt Generator */}
+            <AIPromptGenerator />
 
             {/* AI Art Generator */}
             {showAIGenerator ? (
