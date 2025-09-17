@@ -102,10 +102,18 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
       backgroundColor: "#ffffff",
     });
 
+    console.log('Canvas created, checking freeDrawingBrush:', !!canvas.freeDrawingBrush);
+
     // Initialize the freeDrawingBrush right after canvas creation
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.color = activeColor;
       canvas.freeDrawingBrush.width = brushSize;
+      console.log('Initial brush setup:', {
+        color: canvas.freeDrawingBrush.color,
+        width: canvas.freeDrawingBrush.width
+      });
+    } else {
+      console.error('Canvas freeDrawingBrush not available during initialization!');
     }
 
     // Apply initial pattern
@@ -172,6 +180,8 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    console.log('Setting drawing mode:', activeTool, 'isDrawingMode will be:', activeTool === "draw" || activeTool === "eraser");
+
     // Clear selection when switching to drawing mode
     if (activeTool === "draw" || activeTool === "eraser") {
       fabricCanvas.discardActiveObject();
@@ -180,11 +190,19 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
       if (fabricCanvas.freeDrawingBrush) {
         fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : activeColor;
         fabricCanvas.freeDrawingBrush.width = brushSize;
+        console.log('Brush configured:', {
+          color: fabricCanvas.freeDrawingBrush.color,
+          width: fabricCanvas.freeDrawingBrush.width,
+          isDrawingMode: fabricCanvas.isDrawingMode
+        });
+      } else {
+        console.error('No freeDrawingBrush available!');
       }
     } else {
       fabricCanvas.isDrawingMode = false;
     }
     
+    console.log('Final isDrawingMode:', fabricCanvas.isDrawingMode);
     fabricCanvas.renderAll();
   }, [activeTool, activeColor, brushSize, fabricCanvas]);
 
