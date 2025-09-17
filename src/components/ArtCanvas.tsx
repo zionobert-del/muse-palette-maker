@@ -172,12 +172,20 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.isDrawingMode = activeTool === "draw" || activeTool === "eraser";
-    
-    if ((activeTool === "draw" || activeTool === "eraser") && fabricCanvas.freeDrawingBrush) {
-      fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : activeColor;
-      fabricCanvas.freeDrawingBrush.width = brushSize;
+    // Clear selection when switching to drawing mode
+    if (activeTool === "draw" || activeTool === "eraser") {
+      fabricCanvas.discardActiveObject();
+      fabricCanvas.isDrawingMode = true;
+      
+      if (fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : activeColor;
+        fabricCanvas.freeDrawingBrush.width = brushSize;
+      }
+    } else {
+      fabricCanvas.isDrawingMode = false;
     }
+    
+    fabricCanvas.renderAll();
   }, [activeTool, activeColor, brushSize, fabricCanvas]);
 
   useEffect(() => {
