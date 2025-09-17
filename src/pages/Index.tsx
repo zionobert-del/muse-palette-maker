@@ -3,8 +3,10 @@ import { ArtCanvas } from "@/components/ArtCanvas";
 import { ColorPicker } from "@/components/ColorPicker";
 import { AIArtGenerator } from "@/components/AIArtGenerator";
 import { AIPromptGenerator } from "@/components/AIPromptGenerator";
+import { DebugAI } from "@/components/DebugAI";
 import { Button } from "@/components/ui/button";
-import { Download, Save, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Download, Save, Sparkles, Bug } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -53,127 +55,139 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Mobile-First Layout */}
-        <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4 sm:gap-8">
-          
-          {/* Canvas Area - First on Mobile */}
-          <div className="lg:col-span-3 order-1 lg:order-2">
-            <ArtCanvas 
-              activeColor={activeColor}
-              activeTool={activeTool}
-              brushSize={brushSize}
-              activePattern={activePattern}
-              onToolChange={setActiveTool}
-              onBrushSizeChange={setBrushSize}
-              onPatternChange={setActivePattern}
-              onRegisterImageAdder={handleCanvasImageAdder}
-            />
-          </div>
+        {/* Mobile-First Tabs Layout */}
+        <Tabs defaultValue="canvas" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="canvas">Canvas</TabsTrigger>
+            <TabsTrigger value="ai-art">AI Art</TabsTrigger>
+            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="debug" className="flex items-center gap-1">
+              <Bug className="w-4 h-4" />
+              Debug
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Side Panel - Below Canvas on Mobile */}
-          <div className="lg:col-span-1 order-2 lg:order-1 space-y-4 sm:space-y-6">
-            
-            {/* Compact Color Panel */}
-            <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
-              <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Color Palette</h3>
-              <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-4">
-                <ColorPicker color={activeColor} onChange={setActiveColor} />
-                <div className="text-xs sm:text-sm text-muted-foreground text-center">
-                  {activeColor}
-                </div>
+          <TabsContent value="canvas">
+            <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4 sm:gap-8">
+              
+              {/* Canvas Area - First on Mobile */}
+              <div className="lg:col-span-3 order-1 lg:order-2">
+                <ArtCanvas 
+                  activeColor={activeColor}
+                  activeTool={activeTool}
+                  brushSize={brushSize}
+                  activePattern={activePattern}
+                  onToolChange={setActiveTool}
+                  onBrushSizeChange={setBrushSize}
+                  onPatternChange={setActivePattern}
+                  onRegisterImageAdder={handleCanvasImageAdder}
+                />
               </div>
-            </div>
 
-            {/* Mobile: Combined Tool Status */}
-            <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
-              <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Current Status</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm text-muted-foreground">Tool:</span>
-                  <span className="text-sm sm:text-base font-semibold capitalize text-primary">{activeTool}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm text-muted-foreground">Size:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm sm:text-base font-semibold">{brushSize}px</span>
-                    <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-primary" 
-                         style={{ 
-                           width: `${Math.min(Math.max(brushSize / 2, 8), 24)}px`, 
-                           height: `${Math.min(Math.max(brushSize / 2, 8), 24)}px`,
-                           backgroundColor: activeColor 
-                         }} />
+              {/* Side Panel - Below Canvas on Mobile */}
+              <div className="lg:col-span-1 order-2 lg:order-1 space-y-4 sm:space-y-6">
+                
+                {/* Compact Color Panel */}
+                <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
+                  <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Color Palette</h3>
+                  <div className="flex flex-row sm:flex-col items-center gap-3 sm:gap-4">
+                    <ColorPicker color={activeColor} onChange={setActiveColor} />
+                    <div className="text-xs sm:text-sm text-muted-foreground text-center">
+                      {activeColor}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm text-muted-foreground">Pattern:</span>
-                  <span className="text-sm sm:text-base font-semibold capitalize text-primary">
-                    {activePattern === "none" ? "Plain" : activePattern}
-                  </span>
+
+                {/* Mobile: Combined Tool Status */}
+                <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
+                  <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Current Status</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Tool:</span>
+                      <span className="text-sm sm:text-base font-semibold capitalize text-primary">{activeTool}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Size:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm sm:text-base font-semibold">{brushSize}px</span>
+                        <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-primary" 
+                             style={{ 
+                               width: `${Math.min(Math.max(brushSize / 2, 8), 24)}px`, 
+                               height: `${Math.min(Math.max(brushSize / 2, 8), 24)}px`,
+                               backgroundColor: activeColor 
+                             }} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Pattern:</span>
+                      <span className="text-sm sm:text-base font-semibold capitalize text-primary">
+                        {activePattern === "none" ? "Plain" : activePattern}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions - Horizontal on Mobile */}
+                <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
+                  <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Actions</h3>
+                  <div className="flex sm:flex-col gap-2 sm:gap-3">
+                    <Button 
+                      onClick={handleSave}
+                      className="flex-1 sm:w-full bg-gradient-primary hover:opacity-90 transition-opacity text-xs sm:text-sm"
+                      size="sm"
+                    >
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Save
+                    </Button>
+                    <Button 
+                      onClick={handleExport}
+                      variant="outline"
+                      className="flex-1 sm:w-full text-xs sm:text-sm"
+                      size="sm"
+                    >
+                      <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Desktop Only: Extended Info */}
+                <div className="hidden lg:block bg-card p-6 rounded-xl border shadow-creative">
+                  <h3 className="font-semibold mb-4 text-card-foreground">Background Info</h3>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold capitalize text-primary mb-2">
+                      {activePattern === "none" ? "Plain Canvas" : activePattern}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {activePattern === "grid" && "Perfect for technical drawings"}
+                      {activePattern === "dots" && "Great for sketching guides"}  
+                      {activePattern === "lines" && "Ideal for writing or lined art"}
+                      {activePattern === "none" && "Clean blank canvas"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+          </TabsContent>
 
-            {/* AI Prompt Generator */}
-            <AIPromptGenerator />
-
-            {/* AI Art Generator */}
-            {showAIGenerator ? (
+          <TabsContent value="ai-art">
+            <div className="max-w-4xl mx-auto">
               <AIArtGenerator onImageGenerated={handleImageGenerated} />
-            ) : (
-              <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
-                <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">AI Art</h3>
-                <Button 
-                  onClick={() => setShowAIGenerator(true)}
-                  className="w-full bg-gradient-primary hover:opacity-90 transition-opacity text-xs sm:text-sm"
-                  size="sm"
-                >
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Generate AI Art
-                </Button>
-              </div>
-            )}
-
-            {/* Actions - Horizontal on Mobile */}
-            <div className="bg-card p-4 sm:p-6 rounded-xl border shadow-creative">
-              <h3 className="font-semibold mb-3 sm:mb-4 text-card-foreground text-sm sm:text-base">Actions</h3>
-              <div className="flex sm:flex-col gap-2 sm:gap-3">
-                <Button 
-                  onClick={handleSave}
-                  className="flex-1 sm:w-full bg-gradient-primary hover:opacity-90 transition-opacity text-xs sm:text-sm"
-                  size="sm"
-                >
-                  <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Save
-                </Button>
-                <Button 
-                  onClick={handleExport}
-                  variant="outline"
-                  className="flex-1 sm:w-full text-xs sm:text-sm"
-                  size="sm"
-                >
-                  <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Export
-                </Button>
-              </div>
             </div>
+          </TabsContent>
 
-            {/* Desktop Only: Extended Info */}
-            <div className="hidden lg:block bg-card p-6 rounded-xl border shadow-creative">
-              <h3 className="font-semibold mb-4 text-card-foreground">Background Info</h3>
-              <div className="text-center">
-                <div className="text-lg font-semibold capitalize text-primary mb-2">
-                  {activePattern === "none" ? "Plain Canvas" : activePattern}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {activePattern === "grid" && "Perfect for technical drawings"}
-                  {activePattern === "dots" && "Great for sketching guides"}  
-                  {activePattern === "lines" && "Ideal for writing or lined art"}
-                  {activePattern === "none" && "Clean blank canvas"}
-                </p>
-              </div>
+          <TabsContent value="prompts">
+            <div className="max-w-4xl mx-auto">
+              <AIPromptGenerator />
             </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="debug">
+            <div className="flex justify-center">
+              <DebugAI />
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Enhanced Creative Tips */}
         <div className="bg-card p-6 rounded-xl border shadow-creative">
