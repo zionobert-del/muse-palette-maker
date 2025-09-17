@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const Index = () => {
   const [activeColor, setActiveColor] = useState("#000000");
-  const [activeTool, setActiveTool] = useState<"select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser">("draw");
+  const [activeTool, setActiveTool] = useState<"select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser" | "triangle" | "star" | "spray" | "marker" | "highlighter">("draw");
   const [brushSize, setBrushSize] = useState(5);
   const [activePattern, setActivePattern] = useState<"none" | "grid" | "dots" | "lines">("none");
   const [showAIGenerator, setShowAIGenerator] = useState(false);

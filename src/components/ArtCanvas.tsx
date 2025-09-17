@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Circle, Rect, Line, IText, FabricImage } from "fabric";
+import { Canvas as FabricCanvas, Circle, Rect, Line, IText, FabricImage, Polygon, PencilBrush, CircleBrush } from "fabric";
 import { Button } from "@/components/ui/button";
-import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal, MousePointer, Trash2 } from "lucide-react";
+import { Palette, Square, Circle as CircleIcon, Brush, Eraser, Type, Minus, Undo, Redo, ZoomIn, ZoomOut, Grid, MoreHorizontal, MousePointer, Trash2, Triangle, Star, Droplets, Highlighter } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ArtCanvasProps {
   activeColor: string;
-  activeTool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser";
+  activeTool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser" | "triangle" | "star" | "spray" | "marker" | "highlighter";
   brushSize: number;
   activePattern: "none" | "grid" | "dots" | "lines";
-  onToolChange: (tool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser") => void;
+  onToolChange: (tool: "select" | "draw" | "rectangle" | "circle" | "line" | "text" | "eraser" | "triangle" | "star" | "spray" | "marker" | "highlighter") => void;
   onBrushSizeChange: (size: number) => void;
   onPatternChange: (pattern: "none" | "grid" | "dots" | "lines") => void;
   onRegisterImageAdder?: (addImageFunction: (imageUrl: string) => Promise<void>) => void;
@@ -180,17 +180,34 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    console.log('Setting drawing mode:', activeTool, 'isDrawingMode will be:', activeTool === "draw" || activeTool === "eraser");
+    console.log('Setting drawing mode:', activeTool, 'isDrawingMode will be:', ["draw", "eraser", "spray", "marker", "highlighter"].includes(activeTool));
 
     // Clear selection when switching to drawing mode
-    if (activeTool === "draw" || activeTool === "eraser") {
+    if (["draw", "eraser", "spray", "marker", "highlighter"].includes(activeTool)) {
       fabricCanvas.discardActiveObject();
       fabricCanvas.isDrawingMode = true;
       
-      if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : activeColor;
+      // Set different brush types based on tool
+      if (activeTool === "spray") {
+        fabricCanvas.freeDrawingBrush = new CircleBrush(fabricCanvas);
         fabricCanvas.freeDrawingBrush.width = brushSize;
+        // Simulate spray effect with smaller brush size and opacity
+      } else if (activeTool === "marker") {
+        fabricCanvas.freeDrawingBrush = new CircleBrush(fabricCanvas);
+        fabricCanvas.freeDrawingBrush.width = brushSize * 2;
+      } else if (activeTool === "highlighter") {
+        fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);
+        fabricCanvas.freeDrawingBrush.width = brushSize * 1.5;
+      } else {
+        fabricCanvas.freeDrawingBrush = new PencilBrush(fabricCanvas);
+        fabricCanvas.freeDrawingBrush.width = brushSize;
+      }
+      
+      if (fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.color = activeTool === "eraser" ? "#ffffff" : 
+                                           activeTool === "highlighter" ? activeColor + "80" : activeColor;
         console.log('Brush configured:', {
+          type: activeTool,
           color: fabricCanvas.freeDrawingBrush.color,
           width: fabricCanvas.freeDrawingBrush.width,
           isDrawingMode: fabricCanvas.isDrawingMode
@@ -233,6 +250,39 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
         radius: 50,
       });
       fabricCanvas?.add(circle);
+    } else if (tool === "triangle") {
+      const triangle = new Polygon([
+        { x: 50, y: 0 },
+        { x: 0, y: 100 },
+        { x: 100, y: 100 }
+      ], {
+        left: 100,
+        top: 100,
+        fill: activeColor,
+        scaleX: 1,
+        scaleY: 1
+      });
+      fabricCanvas?.add(triangle);
+    } else if (tool === "star") {
+      const star = new Polygon([
+        { x: 50, y: 0 },
+        { x: 61, y: 35 },
+        { x: 98, y: 35 },
+        { x: 68, y: 57 },
+        { x: 79, y: 91 },
+        { x: 50, y: 70 },
+        { x: 21, y: 91 },
+        { x: 32, y: 57 },
+        { x: 2, y: 35 },
+        { x: 39, y: 35 }
+      ], {
+        left: 100,
+        top: 100,
+        fill: activeColor,
+        scaleX: 0.8,
+        scaleY: 0.8
+      });
+      fabricCanvas?.add(star);
     }
   };
 
@@ -337,6 +387,33 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
             <Eraser className="w-4 h-4" />
             <span className="hidden sm:inline ml-1">Erase</span>
           </Button>
+          <Button
+            variant={activeTool === "spray" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("spray")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <Droplets className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Spray</span>
+          </Button>
+          <Button
+            variant={activeTool === "marker" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("marker")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <CircleIcon className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Marker</span>
+          </Button>
+          <Button
+            variant={activeTool === "highlighter" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("highlighter")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <Highlighter className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Highlight</span>
+          </Button>
           
           {/* Action Buttons */}
           <div className="flex items-center gap-1 ml-2">
@@ -395,6 +472,24 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
           >
             <CircleIcon className="w-4 h-4" />
             <span className="hidden sm:inline ml-1">Circle</span>
+          </Button>
+          <Button
+            variant={activeTool === "triangle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("triangle")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <Triangle className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Triangle</span>
+          </Button>
+          <Button
+            variant={activeTool === "star" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleToolClick("star")}
+            className="transition-all duration-200 touch-manipulation min-w-[3rem]"
+          >
+            <Star className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Star</span>
           </Button>
           <Button
             variant={activeTool === "text" ? "default" : "outline"}
@@ -524,10 +619,42 @@ export const ArtCanvas = ({ activeColor, activeTool, brushSize, activePattern, o
         </div>
       )}
 
-      {activeTool === "eraser" && (
+      {activeTool === "spray" && (
         <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
           <p className="text-sm text-accent-foreground">
-            <strong>Eraser Tool:</strong> Draw to erase parts of your artwork
+            <strong>Spray Tool:</strong> Creates a spray paint effect with scattered dots
+          </p>
+        </div>
+      )}
+
+      {activeTool === "marker" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Marker Tool:</strong> Thick marker strokes for bold artwork
+          </p>
+        </div>
+      )}
+
+      {activeTool === "highlighter" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Highlighter Tool:</strong> Semi-transparent highlighting effect
+          </p>
+        </div>
+      )}
+
+      {activeTool === "triangle" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Triangle Tool:</strong> Click to add triangle shapes to your canvas
+          </p>
+        </div>
+      )}
+
+      {activeTool === "star" && (
+        <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+          <p className="text-sm text-accent-foreground">
+            <strong>Star Tool:</strong> Click to add star shapes to your canvas
           </p>
         </div>
       )}
