@@ -4,9 +4,10 @@ import { ColorPicker } from "@/components/ColorPicker";
 import { AIArtGenerator } from "@/components/AIArtGenerator";
 import { AIPromptGenerator } from "@/components/AIPromptGenerator";
 import { DebugAI } from "@/components/DebugAI";
+import { WebEditor } from "@/components/WebEditor";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Save, Sparkles, Bug } from "lucide-react";
+import { Download, Save, Sparkles, Bug, Bot } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -57,13 +58,17 @@ const Index = () => {
 
         {/* Mobile-First Tabs Layout */}
         <Tabs defaultValue="canvas" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="canvas">Canvas</TabsTrigger>
             <TabsTrigger value="ai-art">AI Art</TabsTrigger>
             <TabsTrigger value="prompts">Prompts</TabsTrigger>
             <TabsTrigger value="debug" className="flex items-center gap-1">
               <Bug className="w-4 h-4" />
               Debug
+            </TabsTrigger>
+            <TabsTrigger value="editor" className="flex items-center gap-1">
+              <Bot className="w-4 h-4" />
+              AI Editor
             </TabsTrigger>
           </TabsList>
 
@@ -186,6 +191,10 @@ const Index = () => {
             <div className="flex justify-center">
               <DebugAI />
             </div>
+          </TabsContent>
+
+          <TabsContent value="editor">
+            <WebEditor />
           </TabsContent>
         </Tabs>
 
