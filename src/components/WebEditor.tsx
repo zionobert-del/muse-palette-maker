@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, Send, Code, Palette, Wand2, Zap, Copy, CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { Bot, Send, Code, Palette, Wand2, Zap, Copy, CheckCircle2, ArrowRight, Sparkles, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditSuggestion {
@@ -19,6 +19,8 @@ interface EditSuggestion {
   code?: string;
   preview?: string;
   difficulty: "easy" | "medium" | "hard";
+  action?: () => void;
+  executable?: boolean;
 }
 
 interface ChatMessage {
@@ -34,88 +36,187 @@ export const WebEditor = () => {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your unlimited web development assistant. I can help you edit, improve, and customize this artwork application. What would you like to change or add?",
+      content: "Hello! I'm your unlimited web development assistant. I can actually modify this artwork application in real-time. Just tell me what you want to change and I'll apply it instantly!",
       timestamp: new Date(),
     }
   ]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [requestCount, setRequestCount] = useState(0);
+  const [appliedChanges, setAppliedChanges] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Real-time page modification functions
+  const applyColorScheme = (primary: string, secondary: string) => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primary);
+    root.style.setProperty('--secondary', secondary);
+    toast.success("Color scheme updated!");
+    setAppliedChanges(prev => [...prev, `Changed colors to ${primary} and ${secondary}`]);
+  };
+
+  const addFloatingAnimation = () => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes float-ai {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-float-ai {
+        animation: float-ai 3s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Apply to buttons
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(btn => btn.classList.add('animate-float-ai'));
+    
+    toast.success("Floating animation added to buttons!");
+    setAppliedChanges(prev => [...prev, "Added floating animations to buttons"]);
+  };
+
+  const addGlowEffect = () => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .ai-glow {
+        box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+        transition: box-shadow 0.3s ease;
+      }
+      .ai-glow:hover {
+        box-shadow: 0 0 30px hsl(var(--primary) / 0.8);
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Apply to cards
+    const cards = document.querySelectorAll('[class*="card"]');
+    cards.forEach(card => card.classList.add('ai-glow'));
+    
+    toast.success("Glow effects added to cards!");
+    setAppliedChanges(prev => [...prev, "Added glow effects to cards"]);
+  };
+
+  const changeBackground = (gradientType: string) => {
+    const body = document.body;
+    const gradients = {
+      sunset: 'linear-gradient(135deg, #ff7e7e, #ff9a56, #ffad56)',
+      ocean: 'linear-gradient(135deg, #667eea, #764ba2)',
+      forest: 'linear-gradient(135deg, #134e5e, #71b280)',
+      space: 'linear-gradient(135deg, #2c3e50, #34495e, #9b59b6)'
+    };
+    
+    body.style.background = gradients[gradientType as keyof typeof gradients] || gradients.sunset;
+    toast.success(`Background changed to ${gradientType}!`);
+    setAppliedChanges(prev => [...prev, `Changed background to ${gradientType} theme`]);
+  };
+
   const generateResponse = async (userMessage: string): Promise<{ content: string; suggestions: EditSuggestion[] }> => {
     // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1500));
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
 
     const suggestions: EditSuggestion[] = [];
     const lowerMessage = userMessage.toLowerCase();
 
-    // Generate contextual suggestions based on user input
+    // Generate executable suggestions based on user input
     if (lowerMessage.includes("color") || lowerMessage.includes("theme")) {
       suggestions.push({
         id: Math.random().toString(),
         type: "style",
-        title: "Update Color Scheme",
-        description: "Implement a new color palette with custom gradients",
-        code: `// Custom color variables in index.css\n:root {\n  --primary: 210 100% 60%;\n  --gradient-primary: linear-gradient(135deg, hsl(210 100% 60%), hsl(280 100% 70%));\n}`,
+        title: "Blue & Purple Theme",
+        description: "Apply a modern blue and purple color scheme",
+        executable: true,
+        action: () => applyColorScheme("210 100% 60%", "280 100% 70%"),
         difficulty: "easy"
       });
-    }
-
-    if (lowerMessage.includes("button") || lowerMessage.includes("ui")) {
       suggestions.push({
         id: Math.random().toString(),
-        type: "ui",
-        title: "Enhanced Button Component",
-        description: "Add animated buttons with hover effects",
-        code: `<Button className="bg-gradient-primary hover:scale-105 transition-transform duration-200">\n  Enhanced Button\n</Button>`,
+        type: "style", 
+        title: "Green & Teal Theme",
+        description: "Apply a fresh green and teal color scheme",
+        executable: true,
+        action: () => applyColorScheme("150 100% 40%", "180 100% 50%"),
         difficulty: "easy"
       });
     }
 
-    if (lowerMessage.includes("animation") || lowerMessage.includes("effect")) {
+    if (lowerMessage.includes("animation") || lowerMessage.includes("float")) {
       suggestions.push({
         id: Math.random().toString(),
         type: "style",
         title: "Add Floating Animation",
-        description: "Create smooth floating animations for UI elements",
-        code: `@keyframes float {\n  0%, 100% { transform: translateY(0px); }\n  50% { transform: translateY(-10px); }\n}\n\n.animate-float {\n  animation: float 3s ease-in-out infinite;\n}`,
+        description: "Make buttons float with smooth animations",
+        executable: true,
+        action: addFloatingAnimation,
         difficulty: "medium"
       });
     }
 
-    if (lowerMessage.includes("component") || lowerMessage.includes("feature")) {
+    if (lowerMessage.includes("glow") || lowerMessage.includes("effect")) {
       suggestions.push({
         id: Math.random().toString(),
-        type: "component",
-        title: "New Interactive Component",
-        description: "Build a custom component with advanced functionality",
-        code: `const InteractiveWidget = () => {\n  const [active, setActive] = useState(false);\n  \n  return (\n    <div className="interactive-widget">\n      {/* Component implementation */}\n    </div>\n  );\n};`,
-        difficulty: "hard"
+        type: "style",
+        title: "Add Glow Effects",
+        description: "Add beautiful glow effects to cards",
+        executable: true,
+        action: addGlowEffect,
+        difficulty: "medium"
       });
     }
 
-    // Always add at least one general suggestion
+    if (lowerMessage.includes("background") || lowerMessage.includes("gradient")) {
+      ['sunset', 'ocean', 'forest', 'space'].forEach(theme => {
+        suggestions.push({
+          id: Math.random().toString(),
+          type: "style",
+          title: `${theme.charAt(0).toUpperCase() + theme.slice(1)} Background`,
+          description: `Apply a beautiful ${theme} gradient background`,
+          executable: true,
+          action: () => changeBackground(theme),
+          difficulty: "easy"
+        });
+      });
+    }
+
+    // Auto-execute simple requests
+    if (lowerMessage.includes("make it blue")) {
+      applyColorScheme("210 100% 60%", "280 100% 70%");
+      return {
+        content: "✅ Applied blue color scheme instantly! Your page now has a beautiful blue and purple theme.",
+        suggestions: []
+      };
+    }
+
+    if (lowerMessage.includes("add animation")) {
+      addFloatingAnimation();
+      return {
+        content: "✅ Added floating animations instantly! All buttons now have smooth floating effects.",
+        suggestions: []
+      };
+    }
+
+    // Always add at least one executable suggestion
     if (suggestions.length === 0) {
       suggestions.push({
         id: Math.random().toString(),
         type: "functionality",
-        title: "Enhance User Experience",
-        description: "Improve the overall user interface and interactions",
-        code: `// Add smooth transitions and micro-interactions\n.transition-all {\n  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);\n}`,
+        title: "Add Glow Effects",
+        description: "Enhance the UI with glowing elements",
+        executable: true,
+        action: addGlowEffect,
         difficulty: "medium"
       });
     }
 
     const responses = [
-      `I understand you want to ${userMessage.toLowerCase()}. Here are some suggestions to improve your application:`,
-      `Great idea! I can help you implement ${userMessage.toLowerCase()}. Let me provide some code solutions:`,
-      `That's a fantastic request! Here's how we can enhance your webpage with ${userMessage.toLowerCase()}:`,
-      `Perfect! I'll help you ${userMessage.toLowerCase()}. Check out these implementation options:`,
+      `I can apply these changes instantly to your webpage:`,
+      `Here are the modifications I can make right now:`,
+      `Choose any of these changes to apply immediately:`,
+      `These updates are ready to be applied to your page:`,
     ];
 
     return {
@@ -202,7 +303,23 @@ export const WebEditor = () => {
             <Badge variant="secondary" className="text-sm">
               ♾️ Unlimited
             </Badge>
+            <Badge variant="secondary" className="text-sm">
+              Changes Applied: {appliedChanges.length}
+            </Badge>
           </div>
+          {appliedChanges.length > 0 && (
+            <div className="mt-4 p-3 bg-primary-foreground/10 rounded-lg">
+              <p className="text-sm text-primary-foreground/80 mb-2">Recent Changes:</p>
+              <div className="text-xs space-y-1">
+                {appliedChanges.slice(-3).map((change, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3 h-3 text-green-400" />
+                    <span>{change}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardHeader>
       </Card>
 
@@ -315,23 +432,37 @@ export const WebEditor = () => {
                             {suggestion.description}
                           </CardDescription>
                         </CardHeader>
-                        {suggestion.code && (
-                          <CardContent className="pt-0">
-                            <div className="relative">
-                              <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
-                                <code>{suggestion.code}</code>
-                              </pre>
+                        <CardContent className="pt-0">
+                          <div className="flex gap-2">
+                            {suggestion.executable && suggestion.action && (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-primary hover:opacity-90"
+                                onClick={suggestion.action}
+                              >
+                                <Play className="w-3 h-3 mr-1" />
+                                Apply Now
+                              </Button>
+                            )}
+                            {suggestion.code && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="absolute top-2 right-2"
                                 onClick={() => handleCopyCode(suggestion.code!)}
                               >
-                                <Copy className="w-3 h-3" />
+                                <Copy className="w-3 h-3 mr-1" />
+                                Copy Code
                               </Button>
+                            )}
+                          </div>
+                          {suggestion.code && (
+                            <div className="mt-3">
+                              <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
+                                <code>{suggestion.code}</code>
+                              </pre>
                             </div>
-                          </CardContent>
-                        )}
+                          )}
+                        </CardContent>
                       </Card>
                     ))
                   )}
@@ -361,14 +492,14 @@ export const WebEditor = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Change Colors", action: "change the color scheme to blue and purple" },
-              { label: "Add Animation", action: "add smooth animations to buttons" },
-              { label: "New Component", action: "create a new interactive widget" },
-              { label: "Improve Layout", action: "make the layout more responsive" },
-              { label: "Add Features", action: "add a search functionality" },
-              { label: "Style Updates", action: "update the typography and spacing" },
-              { label: "Performance", action: "optimize the application performance" },
-              { label: "Accessibility", action: "improve accessibility features" },
+              { label: "Make it Blue", action: "make it blue" },
+              { label: "Add Floating", action: "add animation" },
+              { label: "Ocean Theme", action: "change background to ocean" },
+              { label: "Add Glow", action: "add glow effects" },
+              { label: "Purple Theme", action: "change colors to purple" },
+              { label: "Sunset BG", action: "change background to sunset" },
+              { label: "Forest Theme", action: "change background to forest" },
+              { label: "Space Theme", action: "change background to space" },
             ].map((item, index) => (
               <Button
                 key={index}
